@@ -36,16 +36,16 @@ The model classes are known as POCO classes (from "Plain-Old CLR Objects") becau
 - right-click models folder > **Add** > **Class**
 
 ```c#
-    public class Movie
-    {
-        public int ID { get; set; }
-        public string Title { get; set; }
-    
-        [DataType(DataType.Date)]
-        public DateTime ReleaseDate { get; set; }
-        public string Genre { get; set; }
-        public decimal Price { get; set; }
-    }
+public class Movie
+{
+    public int ID { get; set; }
+    public string Title { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateTime ReleaseDate { get; set; }
+    public string Genre { get; set; }
+    public decimal Price { get; set; }
+}
 ```
 The Movie class contains:
 
@@ -74,7 +74,7 @@ d. select **Add**
 The scaffold process creates and updates the following files:
 - Pages/ModelName: Create, Delete, Details, Edit, and Index. - (model CRUD function)
 - Data/ProjectNameContext.cs - (coordinates EF Core functionality - derived from [Microsoft.EntityFrameworkCore.DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext))
-- Startup.cs - (registers [dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-5.0))
+- Startup.cs - (registers [dependency injection][3])
 
 #### Create initial database schema using Entity Framework migration
 In Entity Framework terminology, an entity set typically corresponds to a database table. An entity corresponds to a row in the table.
@@ -93,6 +93,100 @@ The `migrations` command generates code to create the initial database schema. T
 
 The `update` command runs the `Up` method in migrations that have not been applied. In this case, `update` runs the `Up` method in the *Migrations/<time-stamp>_InitialCreate.cs* file, which creates the database.
 
+## Scaffolded Razor Pages
+Razor Pages are derived from `PageModel`. By convention, the `PageModel`-derived class is named `<PageName>Model`. The constructor uses [dependency injection][3] to add the `RazorPagesMovieContext` to the page:
+```c#
+public class IndexModel : PageModel
+{
+    private readonly WebAppReference.Data.WebAppReferenceContext _context;
+
+    public IndexModel(WebAppReference.Data.WebAppReferenceContext context)
+    {
+        _context = context;
+    }
+```
+
+### Razor .cshtml.cs
+When a request is made for the page, the `OnGetAsync` method returns a list of movies to the Razor Page. On a Razor Page, `OnGetAsync` or `OnGet` is called to initialize the state of the page. In this case, `OnGetAsync` gets a list of movies and displays them.
+
+See [Asynchronous code](https://docs.microsoft.com/en-us/aspnet/core/data/ef-rp/intro?view=aspnetcore-5.0#asynchronous-code) for more information on asynchronous programming with Entity Framework.
+
+When OnGet returns void or OnGetAsync returns Task, no return statement is used. For example the Privacy Page:
+```c#
+public class PrivacyModel : PageModel
+{
+    public void OnGet()
+    {
+    }
+}
+```
+When the return type is `IActionResult` or `Task<IActionResult>`, a return statement must be provided. For example, the *Pages/Movies/Create.cshtml.cs* `OnPostAsync` method:
+```c#
+public async Task<IActionResult> OnPostAsync()
+{
+    if (!ModelState.IsValid)
+        return Page();
+
+    _context.Movie.Add(Movie);
+    await _context.SaveChangesAsync();
+
+    return RedirectToPage("./Index");
+}
+```
+
+### Razor .cshtml
+
+Razor can transition from HTML into C# or into Razor-specific markup. When an `@` symbol is followed by a [Razor reserved keyword](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-5.0#razor-reserved-keywords), it transitions into Razor-specific markup, otherwise it transitions into C#.
+
+#### @page directive
+The `@page` Razor directive makes the file an MVC action, which means that it can handle requests. `@page` must be the first Razor directive on a page.
+
+`@page` and `@model` are examples of transitioning into Razor-specific markup. See Razor syntax for more information.
+
+#### @model directive
+The `@model` directive specifies the type of the model passed to the Razor Page. The `@model` line makes the `PageModel`-derived class available to the Razor Page. 
+```c#
+@page
+@model RazorPagesMovie.Pages.Movies.IndexModel
+```
+
+### Layout Page
+The menu layout is implemented in the Pages/Shared/_Layout.cshtml file.
+
+[Layout](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/layout?view=aspnetcore-5.0) templates allow the HTML container layout to be:
+- Specified in one place.
+- Applied in multiple pages in the site.
+
+The `@RenderBody()` line is a placeholder where all the page-specific views show.
+
+### ViewData and layout
+`ViewData` dictionary property that can be used to pass data to a View. Objects are added to the `ViewData` dictionary using a key value pattern.
+```c#
+@page
+@model RazorPagesMovie.Pages.Movies.IndexModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+```
+
+The `Title` property is used in the Pages/Shared/_Layout.cshtml file. The following markup shows the first few lines of the _Layout.cshtml file.
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - RazorPagesMovie</title>
+
+    @*Markup removed for brevity.*@
+```
+
+#### comments
+The line `@*Markup removed for brevity.*@` is a Razor comment. Unlike HTML comments `<!-- -->`, Razor comments are not sent to the client. See [MDN web docs: Getting started with HTML](https://developer.mozilla.org/docs/Learn/HTML/Introduction_to_HTML/Getting_started#HTML_comments) for more information.
+
+
 
 [1]: https://docs.microsoft.com/en-us/aspnet/core/tutorials/razor-pages/razor-pages-start?view=aspnetcore-5.0&tabs=visual-studio
 [2]: https://docs.microsoft.com/en-us/ef/core/
+[3]: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-5.0
