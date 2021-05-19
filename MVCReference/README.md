@@ -64,5 +64,50 @@ The preceding code:
 - Uses HtmlEncoder.Default.Encode to protect the app from malicious input, such as through JavaScript.
 -Uses Interpolated Strings in $"Hello {name}, NumTimes is: {numTimes}".
 
+## Views
+
+View templates are created using Razor. Razor-based view templates:
+- Have a .cshtml file extension.
+- Provide an elegant way to create HTML output with C#.
+
+```c#
+public IActionResult Index()
+{
+    return View();
+}
+```
+The preceding code:
+- Calls the controller's View method.
+- Uses a view template to generate an HTML response.
+ 
+Controller methods:
+- Are referred to as action methods. For example, the Index action method in the preceding code.
+- Generally return an IActionResult or a class derived from ActionResult, not a type like string.
+
+Controller actions are invoked in response to an incoming URL request. A controller class is where the code is written that handles the incoming browser requests. The controller retrieves data from a data source and decides what type of response to send back to the browser. View templates can be used from a controller to generate and format an HTML response to the browser.
+
+View templates should not:
+- Do business logic
+- Interact with a database directly.
+
+A view template should work only with the data that's provided to it by the controller. Maintaining this "separation of concerns" helps keep the code:
+- Clean.
+- Testable.
+- Maintainable.
+
+
+
+### Layout Pages
+
+[Layout](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/layout?view=aspnetcore-5.0) templates allows:
+- Specifying the HTML container layout of a site in one place.
+- Applying the HTML container layout across multiple pages in the site.
+
+RenderBody is a placeholder where all the view-specific pages you create show up, wrapped in the layout page. For example, if you select the Privacy link, the Views/Home/Privacy.cshtml view is rendered inside the RenderBody method.
+
+
+The Views/_ViewStart.cshtml file brings in the Views/Shared/_Layout.cshtml file to each view. The Layout property can be used to set a different layout view, or set it to null so no layout file will be used.
+
+The content in the Index.cshtml view template is merged with the Views/Shared/_Layout.cshtml view template. A single HTML response is sent to the browser. Layout templates make it easy to make changes that apply across all of the pages in an app. To learn more, see [Layout](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/layout?view=aspnetcore-5.0).
 
 
