@@ -1,6 +1,7 @@
 # Asp.net Core Web App
 reference for .net web app with razor pages
 Tutorials done through *[Get started with Razor Pages in ASP.NET Core][1]*
+*ReadME Copied from Microsoft Documentation*
 
 ## Project files
 
@@ -185,7 +186,29 @@ The `Title` property is used in the Pages/Shared/_Layout.cshtml file. The follow
 #### comments
 The line `@*Markup removed for brevity.*@` is a Razor comment. Unlike HTML comments `<!-- -->`, Razor comments are not sent to the client. See [MDN web docs: Getting started with HTML](https://developer.mozilla.org/docs/Learn/HTML/Introduction_to_HTML/Getting_started#HTML_comments) for more information.
 
+## Database
+The `RazorPagesMovieContext` object handles the task of connecting to the database and mapping `Movie` objects to database records. The database context is registered with the [Dependency Injection][3] container in the `ConfigureServices` method in Startup.cs:
 
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddRazorPages();
+
+    services.AddDbContext<RazorPagesMovieContext>(options =>
+      options.UseSqlServer(Configuration.GetConnectionString("RazorPagesMovieContext")));
+}
+```
+The ASP.NET Core Configuration system reads the ConnectionString key. For local development, configuration gets the connection string from the appsettings.json file.
+```json
+"ConnectionStrings": {
+    "RazorPagesMovieContext": "Server=(localdb)\\mssqllocaldb;Database=RazorPagesMovieContext-bc;Trusted_Connection=True;MultipleActiveResultSets=true"
+}
+```
+When the app is deployed to a test or production server, an environment variable can be used to set the connection string to a test or production database server. For more information, see [Configuration](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0).
+
+### SQL Server Express LocalDB
+LocalDB is a lightweight version of the SQL Server Express database engine that's targeted for program development. LocalDB starts on demand and runs in user mode, so there's no complex configuration.
+By default, LocalDB database creates *.mdf files in the C:\Users\<user>\ directory.
 
 [1]: https://docs.microsoft.com/en-us/aspnet/core/tutorials/razor-pages/razor-pages-start?view=aspnetcore-5.0&tabs=visual-studio
 [2]: https://docs.microsoft.com/en-us/ef/core/
