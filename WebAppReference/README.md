@@ -55,7 +55,7 @@ The Movie class contains:
 -- The user isn't required to enter time information in the date field.
 -- Only the date is displayed, not time information.
 
-[more DataAnnotations here](https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations?view=net-5.0)
+[more DataAnnotations here][4]
 
 ##### Scaffold the model
 
@@ -210,6 +210,49 @@ When the app is deployed to a test or production server, an environment variable
 LocalDB is a lightweight version of the SQL Server Express database engine that's targeted for program development. LocalDB starts on demand and runs in user mode, so there's no complex configuration.
 By default, LocalDB database creates *.mdf files in the C:\Users\<user>\ directory.
 
+## Validation
+The validation rules are enforced any time a user creates or edits a movie.
+
+A key tenet of software development is called DRY ("Don't Repeat Yourself"). Razor Pages encourages development where functionality is specified once, and it's reflected throughout the app. DRY can help:
+- Reduce the amount of code in an app.
+- Make the code less error prone, and easier to test and maintain.
+
+The validation support provided by Razor Pages and Entity Framework is a good example of the DRY principle:
+- Validation rules are declaratively specified in one place, in the model class.
+- Rules are enforced everywhere in the app.
+
+Attribute Examples:
+| Attribute | Description |
+| ----------- | ----------- |
+| [Required] | Specifies that a data field value is required. |
+| [MinimumLength] | Specifies the minimum length of array or string data allowed in a property. |
+| [RegularExpression] | Specifies that a data field value in ASP.NET Dynamic Data must match the specified regular expression.|
+| [Range] | Specifies the numeric range constraints for the value of a data field. |
+| [StringLength] | Specifies the minimum and maximum length of characters that are allowed in a data field. |
+[More about Data Annotations][4]
+
+### Validation Error UI in Razor Pages
+ The errors are enforced both client-side, using JavaScript and jQuery, and server-side, when a user has JavaScript disabled. A significant benefit is that no code changes were necessary in the Create or Edit pages. Once data annotations were applied to the model, the validation UI was enabled.
+ 
+ 
+ The form data isn't posted to the server until there are no client-side validation errors. The [Input Tag Helper](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/working-with-forms?view=aspnetcore-5.0) uses the [DataAnnotations][4] attributes and produces HTML attributes needed for jQuery Validation on the client-side. The [Validation Tag Helper](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/working-with-forms?view=aspnetcore-5.0#the-validation-tag-helpers) displays validation errors. See [Validation](https://docs.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-5.0) for more information.
+ 
+ 
+ When validation logic needs to change, it's done only in the model. Validation is applied consistently throughout the application, validation logic is defined in one place. Validation in one place helps keep the code clean, and makes it easier to maintain and update.
+ 
+ ### DataType Attributes
+ The `[DataType]` attributes:
+- Give hints for the view engine to format the data.
+- Supplies attributes such as <a> for URL's and <a href="mailto:EmailAddress.com"> for email.
+- Can provide a date selector DataType.Date in browsers that support HTML5.
+- Emit HTML 5 data-, pronounced "data dash", attributes that HTML 5 browsers consume.
+- Do not provide any validation.
+
+The `[DataType]` attribute is used to specify a data type that's more specific than the database intrinsic type. `[DataType]` attributes aren't validation attributes. In the sample application, only the date is displayed, without time.
+
+The DataType enumeration provides many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, and more.
+
 [1]: https://docs.microsoft.com/en-us/aspnet/core/tutorials/razor-pages/razor-pages-start?view=aspnetcore-5.0&tabs=visual-studio
 [2]: https://docs.microsoft.com/en-us/ef/core/
 [3]: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-5.0
+[4]: https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations?view=net-5.0
