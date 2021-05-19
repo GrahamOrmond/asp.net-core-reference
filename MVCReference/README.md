@@ -95,8 +95,6 @@ A view template should work only with the data that's provided to it by the cont
 - Testable.
 - Maintainable.
 
-
-
 ### Layout Pages
 
 [Layout](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/layout?view=aspnetcore-5.0) templates allows:
@@ -110,4 +108,125 @@ The Views/_ViewStart.cshtml file brings in the Views/Shared/_Layout.cshtml file 
 
 The content in the Index.cshtml view template is merged with the Views/Shared/_Layout.cshtml view template. A single HTML response is sent to the browser. Layout templates make it easy to make changes that apply across all of the pages in an app. To learn more, see [Layout](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/layout?view=aspnetcore-5.0).
 
+## Models
+Add classes for managing entities in a database. These classes will be the "Model" part of the MVC app.
+You use these classes with Entity Framework Core (EF Core) to work with a database. EF Core is an object-relational mapping (ORM) framework that simplifies the data access code that you have to write.
+
+The model classes you create are known as POCO classes (from Plain Old CLR Objects) because they don't have any dependency on EF Core. They just define the properties of the data that will be stored in the database.
+
+### Create a database context class
+
+A database context class is needed to coordinate EF Core functionality (Create, Read, Update, Delete) for the `Movie` model. The database context is derived from [Microsoft.EntityFrameworkCore.DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) and specifies the entities to include in the data model.
+
+- Create a Data folder
+- Add a Data/MvcMovieContext.cs file with the following code:
+```c#
+using Microsoft.EntityFrameworkCore;
+using MvcMovie.Models;
+
+namespace MvcReference.Data
+{
+    public class MvcReferenceContext : DbContext
+    {
+        public MvcReferenceContext (DbContextOptions<MvcMovieContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Movie> Movie { get; set; }
+    }
+}
+```
+The preceding code creates a DbSet<Movie> property for the entity set. In Entity Framework terminology, an entity set typically corresponds to a database table. An entity corresponds to a row in the table.
+
+### Register the database context
+
+ASP.NET Core is built with [dependency injection (DI)](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-5.0). Services (such as the EF Core DB context) must be registered with DI during application startup. Components that require these services (such as Razor Pages) are provided these services via constructor parameters. 
+
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllersWithViews();
+
+    services.AddDbContext<MvcMovieContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("MvcMovieContext")));
+}
+```
+The name of the connection string is passed in to the context by calling a method on a [DbContextOptions](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontextoptions) object. For local development, the [ASP.NET Core configuration system](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0) reads the connection string from the *appsettings.json* file.
+
+### Add a database connection string
+Add a connection string to the appsettings.json file:
+```json
+{
+  "ConnectionStrings": {
+    "MvcReferenceContext": "Server=(localdb)\\mssqllocaldb;Database=MvcReferenceContext-1;Trusted_Connection=True;MultipleActiveResultSets=true"
+}
+```
+
+### Scaffold model pages
+
+Use the scaffolding tool to produce Create, Read, Update, and Delete (CRUD) pages for the model.
+- In Solution Explorer, right-click the Controllers folder > **Add** > **New Scaffolded Item**.
+- In the **Add Scaffold** dialog, select **MVC Controller with views**, **using Entity Framework** > **Add**.
+- Complete the Add Controller dialog:
+-- Model class: Movie (MvcReference.Models)
+-- Data context class: MvcReferenceContext (MvcReference.Data)
+-- Views: Keep the default of each option checked
+-- Controller name: Keep the default MoviesController
+- Select Add
+
+Visual Studio creates:
+- A movies controller (Controllers/MoviesController.cs)
+- Razor view files for Create, Delete, Details, Edit, and Index pages (Views/Movies/*.cshtml)
+
+The automatic creation of these files is known as scaffolding.
+
+### initial migration
+
+Use the EF Core [Migrations](https://docs.microsoft.com/en-us/aspnet/core/data/ef-mvc/migrations?view=aspnetcore-5.0) feature to create the database. Migrations is a set of tools that let you create and update a database to match your data model.
+
+- From the Tools menu, select NuGet Package Manager > Package Manager Console (PMC).
+- In the PMC, enter the following commands:
+-- Add-Migration InitialCreate
+-- Update-Database
+
+`Add-Migration InitialCreate`:  Generates a Migrations/{timestamp}_InitialCreate.cs migration file. The `InitialCreate` argument is the migration name. Because this is the first migration, the generated class contains code to create the database schema. The database schema is based on the model specified in the `MvcReferenceContext` class.
+
+`Update-Database`: Updates the database to the latest migration, which the previous command created. This command runs the `Up` method in the *Migrations/{time-stamp}_InitialCreate.cs* file, which creates the database.
+
+For more information on the PMC tools for EF Core, see [EF Core tools reference - PMC in Visual Studio](https://docs.microsoft.com/en-us/ef/core/miscellaneous/cli/powershell).
+
+### Dependency injection in the controller
+```c#
+public class MoviesController : Controller
+{
+    private readonly MvcReferenceContext _context;
+
+    public MoviesController(MvcReferenceContext context)
+    {
+        _context = context;
+    }
+    
+    The constructor uses [Dependency Injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-5.0) to inject the database context (`MvcReferenceContext`) into the controller. The database context is used in each of the [CRUD](https://wikipedia.org/wiki/Create,_read,_update_and_delete) methods in the controller.
+```
+
+### Strongly typed models
+
+MVC also provides the ability to pass strongly typed model objects to a view. This strongly typed approach enables compile time code checking. The scaffolding mechanism used this approach (that is, passing a strongly typed model) with the `MoviesController` class and views.
+
+The `id` parameter is generally passed as route data. For example https://localhost:5001/movies/details/1 sets:
+- The controller to the `movies` controller (the first URL segment).
+- The action to `details` (the second URL segment).
+- The id to 1 (the last URL segment).
+You can also pass in the `id` with a query string as follows:
+- https://localhost:5001/movies/details?id=1
+The `id` parameter is defined as a nullable type (`int?`) in case an ID value isn't provided.
+
+### @model keyword
+
+The `@model` statement at the top of the view file specifies the type of object that the view expects. When the movie controller was created, the following `@model` statement was included:
+```cshtml
+@model MvcMovie.Models.Movie
+```
+This `@model` directive allows access to the movie that the controller passed to the view. The `Model` object is strongly typed. 
 
