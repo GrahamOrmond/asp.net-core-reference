@@ -160,12 +160,14 @@ The return type of the `GetTodoItems` and `GetTodoItem` methods is [ActionResult
 ### PUT Method
 `PutTodoItem` is similar to `PostTodoItem`, except it uses HTTP PUT. The response is [204 (No Content)](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html). According to the HTTP specification, a PUT request requires the client to send the entire updated entity, not just the changes. To support partial updates, use [HTTP PATCH](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.httppatchattribute).
 
+## Prevent over-posting
 
+Currently the sample app exposes the entire `TodoItem` object. Production apps typically limit the data that's input and returned using a subset of the model. There are multiple reasons behind this and security is a major one. The subset of a model is usually referred to as a Data Transfer Object (DTO), input model, or view model. DTO is used in this article.
 
+A DTO may be used to:
 
-
-
-
-
-
+- Prevent over-posting.
+- Hide properties that clients are not supposed to view.
+- Omit some properties in order to reduce payload size.
+- Flatten object graphs that contain nested objects. Flattened object graphs can be more convenient for clients.
 
