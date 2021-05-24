@@ -292,3 +292,87 @@ public BookService(IBookstoreDatabaseSettings settings)
 - [InsertOne](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollection_1_InsertOne.htm): Inserts the provided object as a new document in the collection.
 - [ReplaceOne](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollection_1_ReplaceOne.htm): Replaces the single document matching the provided search criteria with the provided object.
 
+### Add a controller
+
+Add a `BooksController` class to the Controllers directory with the following code:
+```c#
+using BooksApi.Models;
+using BooksApi.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+
+namespace BooksApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class BooksController : ControllerBase
+    {
+        private readonly BookService _bookService;
+
+        public BooksController(BookService bookService)
+        {
+            _bookService = bookService;
+        }
+
+        [HttpGet]
+        public ActionResult<List<Book>> Get() =>
+            _bookService.Get();
+
+        [HttpGet("{id:length(24)}", Name = "GetBook")]
+        public ActionResult<Book> Get(string id)
+        {
+            var book = _bookService.Get(id);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return book;
+        }
+
+        [HttpPost]
+        public ActionResult<Book> Create(Book book)
+        {
+            _bookService.Create(book);
+
+            return CreatedAtRoute("GetBook", new { id = book.Id.ToString() }, book);
+        }
+
+        [HttpPut("{id:length(24)}")]
+        public IActionResult Update(string id, Book bookIn)
+        {
+            var book = _bookService.Get(id);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            _bookService.Update(id, bookIn);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:length(24)}")]
+        public IActionResult Delete(string id)
+        {
+            var book = _bookService.Get(id);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            _bookService.Remove(book.Id);
+
+            return NoContent();
+        }
+    }
+}
+```
+The preceding web API controller:
+
+- Uses the `BookService` class to perform CRUD operations.
+- Contains action methods to support GET, POST, PUT, and DELETE HTTP requests.
+- Calls [CreatedAtRoute](https://docs.microsoft.com/en-us/dotnet/api/system.web.http.apicontroller.createdatroute) in the `Create` action method to return an [HTTP 201](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) response. Status code 201 is the standard response for an HTTP POST method that creates a new resource on the server. `CreatedAtRoute` also adds a `Location` header to the response. The `Location` header specifies the URI of the newly created book.
