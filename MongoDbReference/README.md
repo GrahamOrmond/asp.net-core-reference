@@ -199,3 +199,96 @@ In the preceding code:
 - The configuration instance to which the *appsettings.json* file's `BookstoreDatabaseSettings` section binds is registered in the **Dependency Injection (DI) container**. For example, a `BookstoreDatabaseSettings` object's `ConnectionString` property is populated with the `BookstoreDatabaseSettings:ConnectionString` property in *appsettings.json*.
 - The `IBookstoreDatabaseSettings` interface is registered in DI with a singleton service lifetime. When injected, the interface instance resolves to a BookstoreDatabaseSettings object.
 
+### Add a CRUD operations service
+
+1. Add a *Services* directory to the project root.
+
+2. Add a `BookService` class to the *Services* directory with the following code:
+```
+using BooksApi.Models;
+using MongoDB.Driver;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace BooksApi.Services
+{
+    public class BookService
+    {
+        private readonly IMongoCollection<Book> _books;
+
+        public BookService(IBookstoreDatabaseSettings settings)
+        {
+            var client = new MongoClient(settings.ConnectionString);
+            var database = client.GetDatabase(settings.DatabaseName);
+
+            _books = database.GetCollection<Book>(settings.BooksCollectionName);
+        }
+
+        public List<Book> Get() =>
+            _books.Find(book => true).ToList();
+
+        public Book Get(string id) =>
+            _books.Find<Book>(book => book.Id == id).FirstOrDefault();
+
+        public Book Create(Book book)
+        {
+            _books.InsertOne(book);
+            return book;
+        }
+
+        public void Update(string id, Book bookIn) =>
+            _books.ReplaceOne(book => book.Id == id, bookIn);
+
+        public void Remove(Book bookIn) =>
+            _books.DeleteOne(book => book.Id == bookIn.Id);
+
+        public void Remove(string id) => 
+            _books.DeleteOne(book => book.Id == id);
+    }
+}
+```
+In the preceding code, an `IBookstoreDatabaseSettings` instance is retrieved from DI via constructor injection. This technique provides access to the appsettings.json configuration values that were added in the [Add a configuration model](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mongo-app?view=aspnetcore-5.0&tabs=visual-studio#add-a-configuration-model) section.
+
+3. Add the following highlighted code to `Startup.ConfigureServices`:
+
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    // place under database configuration model
+    services.AddSingleton<BookService>();
+```
+
+In the preceding code, the `BookService` class is registered with DI to support constructor injection in consuming classes. The singleton service lifetime is most appropriate because `BookService` takes a direct dependency on `MongoClient`. Per the official [Mongo Client reuse guidelines](https://mongodb.github.io/mongo-csharp-driver/2.8/reference/driver/connecting/#re-use), `MongoClient` should be registered in DI with a singleton service lifetime.
+
+
+The BookService class uses the following MongoDB.Driver members to perform CRUD operations against the database:
+- MongoClient: Reads the server instance for performing database operations. The constructor of this class is provided the MongoDB connection string:
+```c#
+public BookService(IBookstoreDatabaseSettings settings)
+{
+    var client = new MongoClient(settings.ConnectionString);
+    var database = client.GetDatabase(settings.DatabaseName);
+
+    _books = database.GetCollection<Book>(settings.BooksCollectionName);
+}
+```c#
+MongoClient: Reads the server instance for performing database operations. The constructor of this class is provided the MongoDB connection string:
+
+```c#
+public BookService(IBookstoreDatabaseSettings settings)
+{
+    var client = new MongoClient(settings.ConnectionString);
+    ...
+```
+
+- [IMongoDatabase](https://api.mongodb.com/csharp/current/html/T_MongoDB_Driver_IMongoDatabase.htm): Represents the Mongo database for performing operations. This tutorial uses the generic [GetCollection<TDocument>(collection)](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoDatabase_GetCollection__1.htm) method on the interface to gain access to data in a specific collection. Perform CRUD operations against the collection after this method is called. In the `GetCollection<TDocument>(collection)` method call:
+-- `collection` represents the collection name.
+-- `TDocument` represents the CLR object type stored in the collection.
+
+`GetCollection<TDocument>(collection)` returns a [MongoCollection](https://api.mongodb.com/csharp/current/html/T_MongoDB_Driver_MongoCollection.htm) object representing the collection. In this tutorial, the following methods are invoked on the collection:
+
+- [DeleteOne](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollection_1_DeleteOne.htm): Deletes a single document matching the provided search criteria.
+- [Find<TDocument>](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollectionExtensions_Find__1_1.htm): Returns all documents in the collection matching the provided search criteria.
+- [InsertOne](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollection_1_InsertOne.htm): Inserts the provided object as a new document in the collection.
+- [ReplaceOne](https://api.mongodb.com/csharp/current/html/M_MongoDB_Driver_IMongoCollection_1_ReplaceOne.htm): Replaces the single document matching the provided search criteria with the provided object.
+
