@@ -376,3 +376,43 @@ The preceding web API controller:
 - Uses the `BookService` class to perform CRUD operations.
 - Contains action methods to support GET, POST, PUT, and DELETE HTTP requests.
 - Calls [CreatedAtRoute](https://docs.microsoft.com/en-us/dotnet/api/system.web.http.apicontroller.createdatroute) in the `Create` action method to return an [HTTP 201](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) response. Status code 201 is the standard response for an HTTP POST method that creates a new resource on the server. `CreatedAtRoute` also adds a `Location` header to the response. The `Location` header specifies the URI of the newly created book.
+
+### Test the web API
+
+1. Build and run the app.
+2. Navigate to `http://localhost:<port>/api/books` to test the controller's parameterless Get action method. Json is displayed for the elements in the database
+3. Navigate to `http://localhost:<port>/api/books/{id here}` to test the controller's overloaded Get action method.
+
+### Configure JSON serialization options
+
+There are two details to change about the JSON responses returned in the [Test the web API](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mongo-app?view=aspnetcore-5.0&tabs=visual-studio#test-the-web-api) section:
+- The property names' default camel casing should be changed to match the Pascal casing of the CLR object's property names.
+- The `bookName` property should be returned as `Name`.
+
+To satisfy the preceding requirements, make the following changes:
+1. JSON.NET has been removed from ASP.NET shared framework. Add a package reference to [Microsoft.AspNetCore.Mvc.NewtonsoftJson](https://nuget.org/packages/Microsoft.AspNetCore.Mvc.NewtonsoftJson).
+
+2. In `Startup.ConfigureServices`, chain the following highlighted code on to the `AddControllers` method call:
+
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    ...
+    
+    services.AddControllers()
+        .AddNewtonsoftJson(options => options.UseMemberCasing());
+}
+```
+With the preceding change, property names in the web API's serialized JSON response match their corresponding property names in the CLR object type. For example, the `Book` class's `Author` property serializes as `Author`.
+
+3. In Models/Book.cs, annotate the BookName property with the following [[JsonProperty]](https://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonPropertyAttribute.htm) attribute:
+```c#
+[BsonElement("Name")]
+[JsonProperty("Name")]
+public string BookName { get; set; }
+```
+The `[JsonProperty]` attribute's value of `Name` represents the property name in the web API's serialized JSON response.
+
+5. Repeat the steps defined in the Test the web API section. Notice the difference in JSON property names.
+
+

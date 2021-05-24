@@ -38,7 +38,8 @@ namespace MongoDbReference
 
             services.AddSingleton<BookService>();
 
-            services.AddControllers();
+            services.AddControllers()
+                .AddNewtonsoftJson(options => options.UseMemberCasing());
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MongoDbReference", Version = "v1" });
