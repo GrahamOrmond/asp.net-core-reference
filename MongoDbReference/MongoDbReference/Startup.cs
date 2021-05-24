@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MongoDbReference.Models;
 using Microsoft.Extensions.Options;
+using MongoDbReference.Services;
 
 namespace MongoDbReference
 {
@@ -34,6 +35,8 @@ namespace MongoDbReference
 
             services.AddSingleton<IBookstoreDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<BookstoreDatabaseSettings>>().Value);
+
+            services.AddSingleton<BookService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
