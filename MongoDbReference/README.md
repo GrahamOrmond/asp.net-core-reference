@@ -148,3 +148,54 @@ In the preceding class, the Id property:
 
 The `BookName` property is annotated with the [[BsonElement]](https://api.mongodb.com/csharp/current/html/T_MongoDB_Bson_Serialization_Attributes_BsonElementAttribute.htm) attribute. The attribute's value of `Name` represents the property name in the MongoDB collection.
 
+### Add a configuration model
+
+1. Add the following database configuration values to appsettings.json:
+```json
+{
+  "BookstoreDatabaseSettings": {
+    "BooksCollectionName": "Books",
+    "ConnectionString": "mongodb://localhost:27017",
+    "DatabaseName": "BookstoreDb"
+  },
+  "Logging": {
+    ...
+```
+
+2. Add a BookstoreDatabaseSettings.cs file to the Models directory with the following code:
+```c#
+namespace BooksApi.Models
+{
+    public class BookstoreDatabaseSettings : IBookstoreDatabaseSettings
+    {
+        public string BooksCollectionName { get; set; }
+        public string ConnectionString { get; set; }
+        public string DatabaseName { get; set; }
+    }
+
+    public interface IBookstoreDatabaseSettings
+    {
+        string BooksCollectionName { get; set; }
+        string ConnectionString { get; set; }
+        string DatabaseName { get; set; }
+    }
+}
+```
+The preceding `BookstoreDatabaseSettings` class is used to store the *appsettings.json* file's `BookstoreDatabaseSettings` property values. The JSON and C# property names are named identically to ease the mapping process.
+
+3. Add the following code to Startup.ConfigureServices:
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    services.Configure<BookstoreDatabaseSettings>(
+        Configuration.GetSection(nameof(BookstoreDatabaseSettings)));
+
+    // requires using Microsoft.Extensions.Options
+    services.AddSingleton<IBookstoreDatabaseSettings>(sp =>
+        sp.GetRequiredService<IOptions<BookstoreDatabaseSettings>>().Value);
+```
+In the preceding code:
+
+- The configuration instance to which the *appsettings.json* file's `BookstoreDatabaseSettings` section binds is registered in the **Dependency Injection (DI) container**. For example, a `BookstoreDatabaseSettings` object's `ConnectionString` property is populated with the `BookstoreDatabaseSettings:ConnectionString` property in *appsettings.json*.
+- The `IBookstoreDatabaseSettings` interface is registered in DI with a singleton service lifetime. When injected, the interface instance resolves to a BookstoreDatabaseSettings object.
+
