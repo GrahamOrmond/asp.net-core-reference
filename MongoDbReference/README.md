@@ -1,7 +1,7 @@
 # ASP.NET Web API with MongoDB
 personal reference for asp.net web api using MongoDB
 
-ReadMe copied from  microsft documentation *[Create a web API with ASP.NET Core and MongoDB](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mongo-app?view=aspnetcore-5.0&tabs=visual-studio)* and [MongoDB documentation](https://docs.mongodb.com/manual/introduction/)
+**ReadMe copied from  microsft documentation *[Create a web API with ASP.NET Core and MongoDB](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mongo-app?view=aspnetcore-5.0&tabs=visual-studio)* and [MongoDB documentation](https://docs.mongodb.com/manual/introduction/)**
 
 ## MongoDB Windows Installation
 [MongoDB install guide here](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
@@ -104,3 +104,47 @@ If you installed MongoDB with the Windows installer (*.msi*), the *.msi* automat
 ### Add MongoDB binaries to the System PATH
 
 All command-line examples in this tutorial are provided as absolute paths to the MongoDB binaries. You can add **C:\Program Files\MongoDB\Server\4.4\bin** to your System **PATH** and then omit the full path to the MongoDB binaries.
+
+
+## Add MongoDB to ASP.NET Project
+Visit the [uGet Gallery: MongoDB.Driver](https://www.nuget.org/packages/MongoDB.Driver/) to determine the latest stable version of the .NET driver for MongoDB. 
+
+In the **Package Manager Console** window, navigate to the project root. Run the following command to install the .NET driver for MongoDB:
+```PowerShell
+Install-Package MongoDB.Driver -Version {VERSION}
+```
+
+### Add an entity model
+1. Add a *Models* directory to the project root.
+2. Add a `Book` class to the Models directory with the following code:
+```c#
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace BooksApi.Models
+{
+    public class Book
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; set; }
+
+        [BsonElement("Name")]
+        public string BookName { get; set; }
+
+        public decimal Price { get; set; }
+
+        public string Category { get; set; }
+
+        public string Author { get; set; }
+    }
+}
+```
+
+In the preceding class, the Id property:
+- Is required for mapping the **Common Language Runtime (CLR)** object to the MongoDB collection.
+- Is annotated with [[BsonId]](https://api.mongodb.com/csharp/current/html/T_MongoDB_Bson_Serialization_Attributes_BsonIdAttribute.htm) to designate this property as the document's primary key.
+- Is annotated with [[BsonRepresentation(BsonType.ObjectId)]](https://api.mongodb.com/csharp/current/html/T_MongoDB_Bson_Serialization_Attributes_BsonRepresentationAttribute.htm) to allow passing the parameter as type `string` instead of an [ObjectId](https://api.mongodb.com/csharp/current/html/T_MongoDB_Bson_ObjectId.htm) structure. Mongo handles the conversion from `string` to `ObjectId`.
+
+The `BookName` property is annotated with the [[BsonElement]](https://api.mongodb.com/csharp/current/html/T_MongoDB_Bson_Serialization_Attributes_BsonElementAttribute.htm) attribute. The attribute's value of `Name` represents the property name in the MongoDB collection.
+
