@@ -1,6 +1,6 @@
 ASP.NET Web API With PostgreSQL
 Personal referece for asp.net with PostgreSQL
-README copied from [PostgreSQL](https://www.postgresqltutorial.com/)
+README copied from [PostgreSQL](https://www.postgresqltutorial.com/) and [Npgsql Documentation](https://www.npgsql.org/index.html)
 
 ## Install Postgres on Windows
 
@@ -67,4 +67,102 @@ a. The pgAdmin application will launch on the web browser
 5. Click on the Servers node to expand the server. By default, PostgreSQL has a database named postgres
 6. Open the query tool by choosing the menu item **Tool** > **Query Tool** or click the lightning icon.
 7. Enter the query in the **Query Editor**, click the **Execute** button, you will see the result of the query displaying in the **Data Output** tab: `SELECT version();`
+
+## Setup ASP.Net Project
+
+Npgsql has an Entity Framework (EF) Core provider. It behaves like other EF Core providers (e.g. SQL Server), so the [general EF Core docs](https://docs.microsoft.com/ef/core/index) apply here as well.
+
+Development happens in the [Npgsql.EntityFrameworkCore.PostgreSQL](https://github.com/npgsql/Npgsql.EntityFrameworkCore.PostgreSQL) repository, all issues should be reported there.
+
+### Configuring the project file
+
+To use the Npgsql EF Core provider, add a dependency on Npgsql.EntityFrameworkCore.PostgreSQL. You can follow the instructions in the general EF Core Getting Started docs.
+1. Go to **Tools** > **NuGet Package Manager** > **NuGet Package Manager for solution**
+2. Select the **Browse** tab and search for `Npgsql.EntityFrameworkCore.PostgreSQL`
+3. Select the package and install
+
+### Add Models
+1. Right-click solution > **Add** > **New Folder** name it *Models*
+2. Right click *Models* folder > **Add** > **Class..**
+
+Example Blog Model
+```c#
+public class Blog
+{
+    public int BlogId { get; set; }
+    public string Url { get; set; }
+
+    public List<Post> Posts { get; set; }
+}
+```
+
+Example Post Model
+```
+public class Post
+{
+    public int PostId { get; set; }
+    public string Title { get; set; }
+    public string Content { get; set; }
+
+    public int BlogId { get; set; }
+    public Blog Blog { get; set; }
+}
+```
+
+
+### Define a DBContext
+
+Create the DBContext file
+1. Right-click solution > **Add** > **New Folder** name it *Data*
+2. Right click *Data* folder > **Add** > **Class..**
+
+The following code outlines the DBContext
+```c#
+using Microsoft.EntityFrameworkCore;
+
+namespace PostgreSqlReference.Models
+{
+    public class BloggingContext : DbContext
+    {
+        public BloggingContext(DbContextOptions<BloggingContext> options)
+        : base(options)
+        { }
+
+        public DbSet<Blog> Blogs { get; set; }
+        public DbSet<Post> Posts { get; set; }
+    }
+}
+```
+### Add a connection string to appsettings.json
+```json
+"ConnectionStrings": {
+    "BloggingContext": "Host=localhost;Database=Blog;Username=postgres;Password=admin"
+}
+```
+
+### Configure Startup.cs
+
+Inside of `ConfigureServices` you must declare the dependency injection
+```c#
+public void ConfigureServices(IServiceCollection services)
+{
+    // Other DI initializations
+
+    services.AddDbContext<BloggingContext>(options =>
+            options.UseNpgsql(Configuration.GetConnectionString("BloggingContext")));
+}
+```
+
+### Migrations
+
+Install `Microsoft.EntityFrameworkCore.Design`
+1. Go to **Tools** > **NuGet Package Manager** > **NuGet Package Manager for solution**
+2. Select the **Browse** tab and search for `Microsoft.EntityFrameworkCore.Tools`
+3. Select the package and install
+
+Initial migration
+1. From the Tools menu, select NuGetPackage Manager > Package Manager Console
+2. In the PMC, enter the following commands: Add-Migration InitialCreate Update-Database
+
+
 
